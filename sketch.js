@@ -207,10 +207,14 @@ function drawCreditsPage() {
 
 function finalizeAndShare() {
   if (dingSound.isLoaded()) dingSound.play();
+  
+  // Force a clean draw for the capture
   push();
-  imageMode(CORNER);
-  image(bgImage, 0, 0, width, height);
+  imageMode(CENTER);
+  let scale = max(width / bgImage.width, height / bgImage.height);
+  image(bgImage, width / 2, height / 2, bgImage.width * scale, bgImage.height * scale);
   pop();
+  
   drawGajraPage(true); 
   
   fill(255);
@@ -218,6 +222,7 @@ function finalizeAndShare() {
   textAlign(CENTER, TOP);
   textFont('Courier New');
   textWrap(WORD);
+  // Drawing the message note slightly below the gajra on the canvas
   text(messageInput.value(), width/2 - 200, height/2 + radius + 40, 400); 
   
   let dataURL = canvas.toDataURL('image/png');
@@ -227,38 +232,94 @@ function finalizeAndShare() {
   newTab.document.write(`
     <title>A Gift for You</title>
     <style>
-      body { margin:0; background:#111; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; overflow-x:hidden; padding: 20px; }
-      
-      /* THIS IS THE FIX: The CSS Object-Fit Property */
-      img { 
-        width: 100vw;       /* Fill the viewport width */
-        height: 100vh;      /* Fill the viewport height */
-        object-fit: cover;  /* Scale to cover without stretching, cropping edges instead */
-        object-position: center; /* Keep the center of the gajra visible */
-        
-        /* A UX/UI Handoff: Your "Studio" style requires clean edges */
-        border: 8px solid #fff; 
-        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-        
-        /* Ensure it acts like a background on the page */
-        position: fixed; 
-        top: 0; 
-        left: 0; 
-        z-index: -1; 
+      body { 
+        margin: 0; 
+        background: #111; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: flex-end; /* Pushes content to the bottom */
+        height: 100vh; 
+        overflow: hidden; 
+        padding-bottom: 40px; /* Space from the very bottom edge */
+      }
+
+      /* The Background Gajra Image */
+      .gajra-bg { 
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -1; /* Keeps it behind the buttons */
       }
       
-      .instructions { font-family: 'Courier New', Courier, monospace; color:#fff; margin:20px 0; font-size:14px; text-align:center; z-index: 10; }
-      .btn-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; z-index: 10; }
-      .action-btn { padding: 12px 20px; background: rgba(255,255,255,0.05); color:white; border:1px solid white; font-family: 'Courier New'; cursor:pointer; text-transform:uppercase; }
-      .action-btn.black { background: white; color: black; font-weight: bold; }
+      .instructions { 
+        font-family: 'Courier New', Courier, monospace; 
+        color: #fff; 
+        margin-bottom: 20px; 
+        font-size: 14px; 
+        text-align: center;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Makes text readable against busy backgrounds */
+      }
+
+      .btn-container { 
+        display: flex; 
+        gap: 15px; 
+        justify-content: center; 
+      }
+
+      .action-btn { 
+        padding: 12px 25px; 
+        background: rgba(255, 255, 255, 0.05); 
+        color: white; 
+        border: 1px solid white; 
+        font-family: 'Courier New', Courier, monospace; 
+        cursor: pointer; 
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: 0.3s;
+      }
+
+      .action-btn.white { 
+        background: white; 
+        color: black; 
+        font-weight: bold; 
+      }
+      
+      .action-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
     </style>
     <body>
-      <img src="${dataURL}">
+      <img src="${dataURL}" class="gajra-bg">
+      
       <p class="instructions">Hold image to save your gajra card.</p>
+      
       <div class="btn-container">
-        <button class="action-btn black" onclick="navigator.clipboard.writeText('${currentURL}').then(()=>alert('Copied!'))">Copy Link</button>
-        <button class="action-btn" onclick="navigator.share({title:'Gajra', url:'${currentURL}'})">Share</button>
+        <button class="action-btn white" onclick="copyLink()">Copy Link</button>
+        <button class="action-btn" onclick="shareGajra()">Share</button>
       </div>
+
+      <script>
+        function copyLink() {
+          navigator.clipboard.writeText("${currentURL}").then(() => {
+            alert("Studio link copied!");
+          });
+        }
+        function shareGajra() {
+          if (navigator.share) {
+            navigator.share({
+              title: 'A Digital Gajra',
+              url: '${currentURL}'
+            }).catch(console.error);
+          } else {
+            window.location.href = "mailto:?subject=A Gift for You&body=Create your own gajra here: ${currentURL}";
+          }
+        }
+      </script>
     </body>
   `);
   appState = 2;
