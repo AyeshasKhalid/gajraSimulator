@@ -111,8 +111,15 @@ function windowResized() {
 
 function draw() {
   push();
-  imageMode(CORNER);
-  image(bgImage, 0, 0, width, height);
+  imageMode(CENTER);
+  
+  // Calculate scaling to fill the screen without stretching (Cover logic)
+  let scale = max(width / bgImage.width, height / bgImage.height);
+  let newW = bgImage.width * scale;
+  let newH = bgImage.height * scale;
+  
+  // Draw the background at the center of the screen
+  image(bgImage, width / 2, height / 2, newW, newH);
   pop();
 
   if (appState === 0) {
