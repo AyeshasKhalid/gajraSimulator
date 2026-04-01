@@ -40,8 +40,6 @@ async function updateGajraCount(isIncrementing) {
   let mode = isIncrementing ? 'hit' : 'get';
   const url = `https://api.counterapi.dev/v1/ayesha-gajra-studio-2026/global-count/${mode}`;
   
-  // 1. If the user just gifted a gajra, increment the number locally immediately
-  // This makes the UI feel "live" even if the internet is slow.
   if (isIncrementing) {
     let current = parseInt(gajraCount.replace(/,/g, ''));
     gajraCount = (current + 1).toLocaleString();
@@ -50,13 +48,11 @@ async function updateGajraCount(isIncrementing) {
   try {
     const response = await fetch(url);
     const data = await response.json();
-    
-    // 2. Only overwrite our local count if the API actually returns a number
     if (data && data.count !== undefined) {
       gajraCount = data.count.toLocaleString();
     }
   } catch (e) {
-    console.log("Counter API currently unreachable, using local count.");
+    console.log("API Sync delayed, using local count.");
   }
 }
 
@@ -167,14 +163,12 @@ function draw() {
     drawCreditsPage();
   }
   
-  // ANCHORED GAJRA CALCULATOR (Visible in all states)
   drawGlobalCounter();
 }
 
 function drawGlobalCounter() {
   let pulse = map(sin(frameCount * 3), -1, 1, 8, 25);
   push();
-  // Fixed at bottom with 30px breathing room
   translate(width / 2, height - 30); 
   fill(255, pulse); stroke(255, 60);
   rect(-120, -15, 240, 30, 2);
@@ -204,18 +198,20 @@ function drawGajraPage(isFinal) {
     text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 140, 520);
   }
   
-  // Dynamic scale based on state
-  let gSize = isFinal ? 250 : 250;
   let gY = isFinal ? height/2 - 120 : height/2;
-  
-  image(circleImage, width / 2, gY, gSize, gSize);
+  image(circleImage, width / 2, gY, 250, 250);
 
-  for (let f of gajra) {
+  for (let i = 0; i < gajra.length; i++) {
+    let f = gajra[i];
     push(); 
     let offsetX = f.x - width/2;
     let offsetY = f.y - height/2;
     translate(width/2 + offsetX, gY + offsetY); 
-    rotate(f.rotation);
+    
+    // THE WIGGLE (Gentle swaying effect)
+    let wiggle = sin(frameCount * 2 + i * 20) * 3; 
+    rotate(f.rotation + wiggle);
+    
     image(flowerImages[f.type], 0, 0, 100, 100); 
     pop();
   }
@@ -239,11 +235,8 @@ function finalizeAndShare() {
 
 function drawCreditsPage() {
   hideSimulationUI(); downloadBtn.show(); homeBtn.show(); venmoBtn.show();
-  
-  // 1. DRAW FULL-SIZE GAJRA
   drawGajraPage(true);
 
-  // 2. DRAW MESSAGE BOX (Positioned below the gajra)
   let pulse = map(sin(frameCount * 3), -1, 1, 120, 180); 
   let boxW = 500, boxH = 100;
   let boxX = width / 2 - boxW / 2, boxY = height / 2 + 50; 
@@ -251,10 +244,8 @@ function drawCreditsPage() {
   fill(255, 255, 0); textSize(14); textAlign(LEFT, TOP); textWrap(CHAR); 
   text(messageInput.value() || "...", boxX + 20, boxY + 20, boxW - 40, boxH - 40); 
 
-  // 3. THANK YOU TEXT
   fill(255); textAlign(CENTER); textFont('Courier New'); textSize(22);
   text("THANK YOU", width / 2, height / 2 + 190);
-  
   updateAndDrawSparkles();
 }
 
