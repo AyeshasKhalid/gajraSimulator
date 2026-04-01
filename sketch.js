@@ -39,17 +39,24 @@ function setup() {
 async function updateGajraCount(isIncrementing) {
   let mode = isIncrementing ? 'hit' : 'get';
   const url = `https://api.counterapi.dev/v1/ayesha-gajra-studio-2026/global-count/${mode}`;
+  
+  // 1. If the user just gifted a gajra, increment the number locally immediately
+  // This makes the UI feel "live" even if the internet is slow.
+  if (isIncrementing) {
+    let current = parseInt(gajraCount.replace(/,/g, ''));
+    gajraCount = (current + 1).toLocaleString();
+  }
+
   try {
     const response = await fetch(url);
     const data = await response.json();
+    
+    // 2. Only overwrite our local count if the API actually returns a number
     if (data && data.count !== undefined) {
       gajraCount = data.count.toLocaleString();
     }
   } catch (e) {
-    if (isIncrementing) {
-        let current = parseInt(gajraCount.replace(/,/g, ''));
-        gajraCount = (current + 1).toLocaleString();
-    }
+    console.log("Counter API currently unreachable, using local count.");
   }
 }
 
@@ -114,9 +121,9 @@ function initializeUI() {
   styleButton(sendBtn);
   sendBtn.hide();
 
-  if (!homeBtn) homeBtn = createButton('Create Another Gajra');
-  homeBtn.position(width / 2 - 100, height / 2 + 100); // Adjusted for final page layout
-  homeBtn.size(200, 40);
+  if (!homeBtn) homeBtn = createButton('Create Another');
+  homeBtn.position(width / 2 - 145, height - 120); 
+  homeBtn.size(140, 40);
   homeBtn.mousePressed(() => {
     gajra = [];
     appState = 0;
@@ -128,13 +135,11 @@ function initializeUI() {
   styleButton(homeBtn);
   homeBtn.hide();
 
-  if (!venmoBtn) venmoBtn = createButton('Support the Artist');
-  venmoBtn.position(width / 2 - 80, height / 2 + 160); // Adjusted for final page layout
-  venmoBtn.size(160, 30);
+  if (!venmoBtn) venmoBtn = createButton('Support Artist');
+  venmoBtn.position(width / 2 + 5, height - 120); 
+  venmoBtn.size(140, 40);
   venmoBtn.mousePressed(() => { window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'); });
   styleButton(venmoBtn);
-  venmoBtn.style('font-size', '10px'); 
-  venmoBtn.style('opacity', '0.6');    
   venmoBtn.hide();
 }
 
@@ -161,19 +166,27 @@ function draw() {
   } else if (appState === 2) {
     drawCreditsPage();
   }
+  
+  // ANCHORED GAJRA CALCULATOR (Visible in all states)
+  drawGlobalCounter();
+}
+
+function drawGlobalCounter() {
+  let pulse = map(sin(frameCount * 3), -1, 1, 8, 25);
+  push();
+  // Fixed at bottom with 30px breathing room
+  translate(width / 2, height - 30); 
+  fill(255, pulse); stroke(255, 60);
+  rect(-120, -15, 240, 30, 2);
+  noStroke(); fill(255, 200); textFont('Courier New'); textAlign(CENTER); textSize(11);
+  text(`GAJRAS WOVEN GLOBALLY: ${gajraCount}`, 0, 5);
+  pop();
 }
 
 function drawLandingPage() {
   image(logoImage, width / 2, height / 2 - 160, 200, 200);
   fill(255); textAlign(CENTER); textFont('Courier New'); textSize(16);
   text("In the quiet corners of the heart, we weave memories into form...", width/2 - 250, height / 2 - 20, 500); 
-  let pulse = map(sin(frameCount * 3), -1, 1, 8, 25);
-  push();
-  fill(255, pulse); stroke(255, 60);
-  rect(width / 2 - 120, height / 2 + 165, 240, 30, 2);
-  noStroke(); fill(255, 200); textSize(11);
-  text(`GAJRAS WOVEN GLOBALLY: ${gajraCount}`, width / 2, height / 2 + 185);
-  pop();
   updateAndDrawSparkles();
 }
 
@@ -184,18 +197,27 @@ function drawGajraPage(isFinal) {
   }
   
   textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
-  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 100, 520); 
+  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
   
   if (!isFinal) {
     fill(255, 255, 0); 
-    text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 160, 520);
+    text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 140, 520);
   }
   
-  image(circleImage, width / 2, height / 2, 250, 250);
+  // Dynamic scale based on state
+  let gSize = isFinal ? 250 : 250;
+  let gY = isFinal ? height/2 - 120 : height/2;
+  
+  image(circleImage, width / 2, gY, gSize, gSize);
 
   for (let f of gajra) {
-    push(); translate(f.x, f.y); rotate(f.rotation);
-    image(flowerImages[f.type], 0, 0, 100, 100); pop();
+    push(); 
+    let offsetX = f.x - width/2;
+    let offsetY = f.y - height/2;
+    translate(width/2 + offsetX, gY + offsetY); 
+    rotate(f.rotation);
+    image(flowerImages[f.type], 0, 0, 100, 100); 
+    pop();
   }
 
   if (gajra.length >= maxFlowers && !isFinal) {
@@ -204,7 +226,7 @@ function drawGajraPage(isFinal) {
     text(`${messageInput.value().length}/400`, width / 2 + 200, height - 185);
   } else if (!isFinal) {
     fill(255, 180); textSize(12);
-    text(`Progress: ${gajra.length} / ${maxFlowers}`, width / 2, height - 40);
+    text(`Progress: ${gajra.length} / ${maxFlowers}`, width / 2, height - 80);
   }
   updateAndDrawSparkles();
 }
@@ -218,34 +240,20 @@ function finalizeAndShare() {
 function drawCreditsPage() {
   hideSimulationUI(); downloadBtn.show(); homeBtn.show(); venmoBtn.show();
   
-  // 1. DRAW MINI GAJRA (150px)
-  push();
-  translate(width / 2, height / 2 - 220); // Top of the stack
-  image(circleImage, 0, 0, 150, 150);
-  let miniScale = 150/250; // Scale flowers down relative to the 250px original
-  for (let f of gajra) {
-    push(); 
-    // Reposition flowers based on mini scale
-    let mx = (f.x - width/2) * miniScale;
-    let my = (f.y - height/2) * miniScale;
-    translate(mx, my); 
-    rotate(f.rotation);
-    image(flowerImages[f.type], 0, 0, 60, 60); 
-    pop();
-  }
-  pop();
+  // 1. DRAW FULL-SIZE GAJRA
+  drawGajraPage(true);
 
-  // 2. DRAW MESSAGE BOX
+  // 2. DRAW MESSAGE BOX (Positioned below the gajra)
   let pulse = map(sin(frameCount * 3), -1, 1, 120, 180); 
   let boxW = 500, boxH = 100;
-  let boxX = width / 2 - boxW / 2, boxY = height / 2 - 100; 
+  let boxX = width / 2 - boxW / 2, boxY = height / 2 + 50; 
   fill(0, pulse); noStroke(); rect(boxX, boxY, boxW, boxH, 10); 
   fill(255, 255, 0); textSize(14); textAlign(LEFT, TOP); textWrap(CHAR); 
   text(messageInput.value() || "...", boxX + 20, boxY + 20, boxW - 40, boxH - 40); 
 
-  // 3. DRAW THANK YOU
-  fill(255); textAlign(CENTER); textFont('Courier New'); textSize(24);
-  text("THANK YOU", width / 2, height / 2 + 50);
+  // 3. THANK YOU TEXT
+  fill(255); textAlign(CENTER); textFont('Courier New'); textSize(22);
+  text("THANK YOU", width / 2, height / 2 + 190);
   
   updateAndDrawSparkles();
 }
