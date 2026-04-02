@@ -1,19 +1,16 @@
 let flowerImages = [];
 let circleImage, bgImage, logoImage;
 let gajra = [];
-const radius = 100; 
 let maxFlowers = 15;
 let clearBtn, sendBtn, homeBtn, startBtn, venmoBtn, navHomeBtn, downloadBtn, shareBtn; 
 let plopSound, typeSound, dingSound; 
 let appState = 0; 
 let messageInput;
-let fadeAlpha = 255; 
 let gajraCount = "0"; 
-let sparkles = []; 
 
-// Firebase Variables
-let database;
-let globalCountRef;
+// Layout Control
+let isMobile = false;
+let gSize, rVal, uiW, uiH;
 
 // PASTE YOUR FIREBASE CONFIG HERE
 const firebaseConfig = {
@@ -45,229 +42,219 @@ function setup() {
   imageMode(CENTER);
   angleMode(DEGREES);
   
+  checkLayout();
+  
   firebase.initializeApp(firebaseConfig);
-  database = firebase.database();
-  globalCountRef = database.ref('gajraCount');
-
-  globalCountRef.on('value', (snapshot) => {
-    let data = snapshot.val();
-    if (data !== null) {
-      gajraCount = data.toLocaleString();
-    } else {
-      globalCountRef.set(1024); 
-    }
+  firebase.database().ref('gajraCount').on('value', (s) => {
+    if (s.val()) gajraCount = s.val().toLocaleString();
   });
 
-  typeSound.setVolume(0.1); 
-  dingSound.setVolume(0.3); 
-  plopSound.setVolume(0.5);
-  
   initializeUI();
+}
+
+function checkLayout() {
+  isMobile = (width < 600);
+  if (isMobile) {
+    gSize = 300; 
+    rVal = 115;  
+    uiW = 260;   
+    uiH = 120;   
+  } else {
+    gSize = 250; 
+    rVal = 100;
+    uiW = 400;
+    uiH = 80; // Increased height to show full placeholder
+  }
 }
 
 function initializeUI() {
   startBtn = createButton('Weave a Gajra for Someone You Love');
-  startBtn.position(width/2 - 150, height/2 + 100);
-  startBtn.size(300, 50);
-  startBtn.mousePressed(() => { appState = 1; startBtn.hide(); if (plopSound.isLoaded()) plopSound.play(); });
+  let sW = isMobile ? 280 : 350;
+  startBtn.size(sW, 50);
+  startBtn.position(width/2 - sW/2, height/2 + 100);
+  startBtn.mousePressed(() => { appState = 1; startBtn.hide(); });
   styleButton(startBtn);
 
   navHomeBtn = createButton('⌂');
+  navHomeBtn.size(40, 40); 
   navHomeBtn.position(20, 20);
-  navHomeBtn.size(45, 40);
-  navHomeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
+  navHomeBtn.mousePressed(() => { gajra = []; appState = 0; hideUI(); startBtn.show(); });
   styleButton(navHomeBtn); navHomeBtn.hide();
 
-  downloadBtn = createButton('Download Image');
-  downloadBtn.position(width - 160, 20);
-  downloadBtn.size(140, 40);
+  clearBtn = createButton('Start over');
+  clearBtn.size(120, 40);
+  clearBtn.position(width - 140, 20); 
+  clearBtn.mousePressed(() => { gajra = []; messageInput.value(''); });
+  styleButton(clearBtn); clearBtn.hide();
+
+  downloadBtn = createButton(isMobile ? '↓' : 'Download Image');
+  let dW = isMobile ? 40 : 160;
+  downloadBtn.size(dW, 40);
+  downloadBtn.position(width - (dW + 20), 20);
   downloadBtn.mousePressed(() => saveCanvas('my-gajra', 'png'));
   styleButton(downloadBtn); downloadBtn.hide();
 
-  // Primary Action Button (Right under text box)
-  homeBtn = createButton('Create Another');
-  homeBtn.position(width/2 - 80, height - 200);
-  homeBtn.size(160, 40);
-  homeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
+  homeBtn = createButton('Create another');
+  homeBtn.size(140, 40);
+  homeBtn.mousePressed(() => { gajra = []; appState = 0; hideUI(); startBtn.show(); });
   styleButton(homeBtn); homeBtn.hide();
 
-  // Secondary Action Row (Under Create Another)
-  let btnW = 120;
-  let gap = 15;
-  let totalW = (btnW * 2) + gap;
-  let startX = width/2 - totalW/2;
-  let btnY = height - 150; 
-
   shareBtn = createButton('Share');
-  shareBtn.position(startX, btnY);
-  shareBtn.size(btnW, 40);
-  shareBtn.mousePressed(() => { if (navigator.share) navigator.share({title: 'My Gajra', url: window.location.href}); });
+  shareBtn.size(isMobile ? 70 : 100, 40);
+  shareBtn.mousePressed(() => { if (navigator.share) navigator.share({url: window.location.href}); });
   styleButton(shareBtn); shareBtn.hide();
 
   venmoBtn = createButton('Patron');
-  venmoBtn.position(startX + btnW + gap, btnY);
-  venmoBtn.size(btnW, 40);
-  venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
+  venmoBtn.size(isMobile ? 70 : 100, 40);
+  venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989'));
   styleButton(venmoBtn); venmoBtn.hide();
 
-  clearBtn = createButton('Start Over');
-  clearBtn.position(75, 20);
-  clearBtn.size(110, 40);
-  clearBtn.mousePressed(() => { gajra = []; messageInput.value(''); messageInput.hide(); sendBtn.hide(); });
-  styleButton(clearBtn); clearBtn.hide();
-
+  // STYLED TEXT BOX WITH FULL PLACEHOLDER
   messageInput = createInput('');
-  messageInput.attribute('maxlength', '400');
   messageInput.attribute('placeholder', "Dear Beloved, In every flower, I have woven a thought of you....");
-  messageInput.position(width/2 - 200, height - 180);
-  messageInput.size(400, 40);
+  messageInput.attribute('maxlength', '400');
+  messageInput.size(uiW, uiH);
+  
+  // Custom CSS for Placeholder and Input Style
+  messageInput.style('background', 'rgba(255, 255, 255, 0.05)');
+  messageInput.style('color', '#fff');
+  messageInput.style('border', '1px solid rgba(255, 255, 255, 0.4)');
+  messageInput.style('font-family', 'Courier New');
+  messageInput.style('font-size', '13px');
+  messageInput.style('padding', '12px');
+  messageInput.style('outline', 'none');
+  
+  // This helps the placeholder wrap or stay visible
+  messageInput.style('white-space', 'normal'); 
+  
   messageInput.input(() => { if (typeSound.isLoaded()) typeSound.play(); });
   messageInput.hide();
 
   sendBtn = createButton('Gift this Gajra');
-  sendBtn.position(width/2 - 75, height - 120);
-  sendBtn.size(150, 40);
-  sendBtn.mousePressed(() => { 
-    triggerSparkleExplosion(width/2, height - 120); 
-    updateGajraCount(true); 
-    appState = 2; 
-  });
+  sendBtn.size(140, 40);
+  sendBtn.mousePressed(() => { updateCount(); appState = 2; });
   styleButton(sendBtn); sendBtn.hide();
 }
 
-function updateGajraCount(isIncrementing) {
-  if (isIncrementing) {
-    globalCountRef.transaction((currentValue) => {
-      return (currentValue || 0) + 1;
-    });
-  }
+function updateCount() {
+  firebase.database().ref('gajraCount').transaction(c => (c || 0) + 1);
 }
 
-function hideSimulationUI() {
-  navHomeBtn.hide(); downloadBtn.hide(); clearBtn.hide();
-  messageInput.hide(); sendBtn.hide(); shareBtn.hide(); homeBtn.hide(); venmoBtn.hide();
+function hideUI() {
+  [navHomeBtn, clearBtn, downloadBtn, homeBtn, shareBtn, venmoBtn, sendBtn].forEach(b => b.hide());
+  messageInput.hide();
 }
 
 function draw() {
+  background(20);
   push();
   imageMode(CENTER);
   let scale = max(width / bgImage.width, height / bgImage.height);
   image(bgImage, width / 2, height / 2, bgImage.width * scale, bgImage.height * scale);
   pop();
 
-  if (appState === 0) drawLandingPage();
-  else if (appState === 1) drawGajraPage();
-  else if (appState === 2) drawCreditsPage();
+  if (appState === 0) drawHome();
+  else if (appState === 1) drawSim();
+  else if (appState === 2) drawFinal();
   
-  drawGlobalCounter();
+  drawCounter();
 }
 
-function drawGlobalCounter() {
-  let pulse = map(sin(frameCount * 3), -1, 1, 8, 25);
+function drawCounter() {
+  let cW = 180, cH = 35;
   push();
-  translate(width/2, height - 30); 
-  fill(255, pulse); stroke(255, 60);
-  rect(-120, -15, 240, 30, 2);
-  noStroke(); fill(255, 200); textFont('Courier New'); textAlign(CENTER); textSize(11);
-  text(`GAJRAS MADE GLOBALLY: ${gajraCount}`, 0, 5);
+  translate(width/2, height - (cH + 15));
+  fill(255, 15); stroke(255, 40); rect(-cW/2, -cH/2, cW, cH, 2);
+  noStroke(); fill(255, 180); textAlign(CENTER, CENTER); textSize(11); textFont('Courier New');
+  text(`Gajra made: ${gajraCount}`, 0, 0);
   pop();
 }
 
-function drawLandingPage() {
-  image(logoImage, width/2, height/2 - 160, 200, 200);
-  fill(255); textAlign(CENTER); textFont('Courier New'); textSize(16);
-  text("In the quiet corners of the heart, we weave memories into form...", width/2 - 250, height/2 - 20, 500); 
-  updateAndDrawSparkles();
+function drawHome() {
+  image(logoImage, width/2, height/2 - 140, 225, 225);
+  fill(255); textAlign(CENTER); textSize(16); textFont('Courier New');
+  let txt = "In the quiet corners of the heart, \nwe weave memories into form";
+  text(txt, width/2 - 160, height/2 + 20, 320);
 }
 
-function drawGajraPage() {
-  navHomeBtn.show(); downloadBtn.show(); clearBtn.show();
-  textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
-  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
-  fill(255, 255, 0); text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 140, 520);
-  
-  image(circleImage, width/2, height/2, 250, 250);
-  drawFlowers(height/2);
+function drawSim() {
+  navHomeBtn.show(); clearBtn.show();
+  fill(255); textAlign(CENTER); textFont('Courier New'); textSize(15);
+  text("A Gajra remind's us that Love does not need \ngrand gestures", width/2 - 160, 85, 320);
+  fill(255, 255, 180); textSize(13);
+  text("Tap the circle to bind flower in the thread", width/2 - 160, 160, 320);
+
+  image(circleImage, width/2, height/2 - 40, gSize, gSize);
+  drawFlowers(height/2 - 40);
 
   if (gajra.length >= maxFlowers) {
-    messageInput.show(); sendBtn.show();
-    fill(255, 255, 0); textSize(10); textAlign(RIGHT);
-    text(`${messageInput.value().length}/400`, width/2 + 200, height - 185);
-  } else {
-    fill(255, 180); textSize(12);
-    text(`Progress: ${gajra.length} / ${maxFlowers}`, width/2, height - 80);
+    let boxY = height/2 + (gSize/2) - 10;
+    messageInput.position(width/2 - uiW/2, boxY);
+    messageInput.show();
+    
+    fill(255, 255, 150); textAlign(RIGHT); textSize(11); textFont('Courier New');
+    text(`${messageInput.value().length}/400`, width/2 + uiW/2, boxY - 8);
+    
+    sendBtn.position(width/2 - 70, boxY + uiH + 20);
+    sendBtn.show();
   }
-  updateAndDrawSparkles();
 }
 
-function drawCreditsPage() {
-  hideSimulationUI(); downloadBtn.show(); homeBtn.show(); venmoBtn.show(); shareBtn.show();
-  
-  textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
-  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
+function drawFinal() {
+  hideUI(); downloadBtn.show();
+  fill(255); textAlign(CENTER); textFont('Courier New'); textSize(15);
+  text("A Gajra remind's us that Love does not need \ngrand gestures", width/2 - 160, 85, 320);
 
-  let gY = 220; 
-  image(circleImage, width/2, gY, 250, 250);
+  let gY = height * 0.35;
+  image(circleImage, width/2, gY, gSize, gSize);
   drawFlowers(gY);
 
-  let boxW = 500, boxH = 100;
-  let boxY = gY + 180;
-  fill(255, 15); stroke(255, 50); rect(width/2 - boxW/2, boxY, boxW, boxH, 10);
+  let boxY = gY + gSize/2 + 30;
+  messageInput.position(width/2 - uiW/2, boxY);
+  messageInput.show();
   
-  fill(255, 255, 0); textAlign(RIGHT); textSize(10);
-  text(`${messageInput.value().length}/400`, width/2 + boxW/2 - 10, boxY - 10);
+  fill(255, 255, 150); textAlign(RIGHT); textSize(11); textFont('Courier New');
+  text(`${messageInput.value().length}/400`, width/2 + uiW/2, boxY - 8);
   
-  fill(255); textAlign(LEFT, TOP); textSize(14); 
-  text(messageInput.value() || "...", width/2 - boxW/2 + 20, boxY + 20, boxW - 40, boxH - 40);
-
-  updateAndDrawSparkles();
+  homeBtn.position(width/2 - 70, boxY + uiH + 25);
+  homeBtn.show();
+  
+  shareBtn.position(width/2 - (isMobile ? 75 : 105), boxY + uiH + 80);
+  shareBtn.show();
+  venmoBtn.position(width/2 + (isMobile ? 5 : 5), boxY + uiH + 80);
+  venmoBtn.show();
 }
 
 function drawFlowers(yCenter) {
   for (let i = 0; i < gajra.length; i++) {
     let f = gajra[i];
-    push(); 
-    let offsetX = f.x - width/2;
-    let offsetY = f.y - height/2;
-    translate(width/2 + offsetX, yCenter + offsetY); 
-    let wiggle = sin(frameCount * 2 + i * 20) * 3; 
-    rotate(f.rotation + wiggle);
-    image(flowerImages[f.type], 0, 0, 100, 100); 
+    push();
+    translate(width/2 + rVal * cos(f.angle), yCenter + rVal * sin(f.angle));
+    rotate(f.rot);
+    image(flowerImages[f.type], 0, 0, gSize * 0.45, gSize * 0.45);
     pop();
   }
 }
 
 function mousePressed() {
-  if (appState === 1 && dist(mouseX, mouseY, width / 2, height / 2) < 150) {
+  if (appState === 1 && dist(mouseX, mouseY, width/2, height/2 - 40) < gSize/2) {
     if (gajra.length >= maxFlowers) return;
-    let angle = atan2(mouseY - height / 2, mouseX - width / 2);
-    let snapX = width / 2 + radius * cos(angle);
-    let snapY = height / 2 + radius * sin(angle);
-    let selectedType = (gajra.length === maxFlowers - 1) ? 3 : floor(random(3));
-    gajra.push({ x: snapX, y: snapY, type: selectedType, rotation: random(360) });
+    let angle = atan2(mouseY - (height/2 - 40), mouseX - width/2);
+    let type = (gajra.length === maxFlowers - 1) ? 3 : floor(random(3));
+    gajra.push({ angle: angle, type: type, rot: random(360) });
     if (plopSound.isLoaded()) plopSound.play();
   }
 }
 
-function updateAndDrawSparkles() {
-  for (let i = sparkles.length - 1; i >= 0; i--) {
-    let p = sparkles[i]; p.c.setAlpha(p.alpha);
-    fill(p.c); noStroke(); circle(p.x, p.y, p.sz);
-    p.x += p.vx; p.y += p.vy; p.alpha -= 5;
-    if (p.alpha <= 0) sparkles.splice(i, 1);
-  }
-}
-
-function triggerSparkleExplosion(x, y) {
-  for (let i = 0; i < 20; i++) sparkles.push({x: x, y: y, vx: random(-2,2), vy: random(-4,-1), alpha: 255, sz: random(1,4), c: color(255, random(220,255), 200)});
-}
-
-function createSparkle(x, y, vx, vy) {
-  sparkles.push({x: x, y: y, vx: vx, vy: vy, alpha: 255, sz: random(1,4), c: color(255, 255, 200)});
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  checkLayout();
+  hideUI();
+  initializeUI();
 }
 
 function styleButton(btn) {
-  btn.style('padding', '10px'); btn.style('background-color', 'rgba(255, 255, 255, 0.05)'); 
-  btn.style('color', '#fff'); btn.style('border', '1px solid #fff');
+  btn.style('background', 'rgba(255, 255, 255, 0.08)'); 
+  btn.style('color', '#fff'); btn.style('border', '1px solid rgba(255,255,255,0.4)');
   btn.style('font-family', 'Courier New'); btn.style('cursor', 'pointer');
 }
