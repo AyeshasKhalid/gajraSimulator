@@ -100,7 +100,7 @@ function initializeUI() {
 
   // Final Page Secondary Row
   homeBtn = createButton('Create Another');
-  homeBtn.position(width/2 - 80, height - 180);
+  homeBtn.position(width/2 - 80, height - 150);
   homeBtn.size(160, 40);
   homeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
   styleButton(homeBtn); homeBtn.hide();
