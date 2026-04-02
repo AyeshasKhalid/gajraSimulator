@@ -3,13 +3,28 @@ let circleImage, bgImage, logoImage;
 let gajra = [];
 const radius = 100; 
 let maxFlowers = 15;
-let clearBtn, sendBtn, homeBtn, startBtn, venmoBtn, navHomeBtn, downloadBtn, copyBtn, shareBtn; 
+let clearBtn, sendBtn, homeBtn, startBtn, venmoBtn, navHomeBtn, downloadBtn, shareBtn; 
 let plopSound, typeSound, dingSound; 
 let appState = 0; 
 let messageInput;
 let fadeAlpha = 255; 
-let gajraCount = "1,024"; 
+let gajraCount = "0"; 
 let sparkles = []; 
+
+// Firebase Variables
+let database;
+let globalCountRef;
+
+// PASTE YOUR FIREBASE CONFIG HERE
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "gajrasimulator.firebaseapp.com",
+  databaseURL: "https://gajrasimulator-default-rtdb.firebaseio.com",
+  projectId: "gajrasimulator",
+  storageBucket: "gajrasimulator.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
 function preload() {
   flowerImages[0] = loadImage('flower0.PNG');
@@ -29,29 +44,28 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   imageMode(CENTER);
   angleMode(DEGREES);
+  
+  firebase.initializeApp(firebaseConfig);
+  database = firebase.database();
+  globalCountRef = database.ref('gajraCount');
+
+  globalCountRef.on('value', (snapshot) => {
+    let data = snapshot.val();
+    if (data !== null) {
+      gajraCount = data.toLocaleString();
+    } else {
+      globalCountRef.set(1024); 
+    }
+  });
+
   typeSound.setVolume(0.1); 
   dingSound.setVolume(0.3); 
   plopSound.setVolume(0.5);
+  
   initializeUI();
-  updateGajraCount(false); 
-}
-
-async function updateGajraCount(isIncrementing) {
-  let mode = isIncrementing ? 'hit' : 'get';
-  const url = `https://api.counterapi.dev/v1/ayesha-gajra-studio-2026/global-count/${mode}`;
-  if (isIncrementing) {
-    let current = parseInt(gajraCount.replace(/,/g, ''));
-    gajraCount = (current + 1).toLocaleString();
-  }
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data && data.count !== undefined) gajraCount = data.count.toLocaleString();
-  } catch (e) { console.log("API Sync delayed."); }
 }
 
 function initializeUI() {
-  // Common UI
   startBtn = createButton('Weave a Gajra for Someone You Love');
   startBtn.position(width/2 - 150, height/2 + 100);
   startBtn.size(300, 50);
@@ -64,48 +78,38 @@ function initializeUI() {
   navHomeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
   styleButton(navHomeBtn); navHomeBtn.hide();
 
-  // Final Page Header
   downloadBtn = createButton('Download Image');
   downloadBtn.position(width - 160, 20);
   downloadBtn.size(140, 40);
   downloadBtn.mousePressed(() => saveCanvas('my-gajra', 'png'));
   styleButton(downloadBtn); downloadBtn.hide();
 
-  // Final Page Interaction Row (Centered Justified)
-  let btnW = 120;
-  let gap = 10;
-  let totalW = (btnW * 3) + (gap * 2);
-  let startX = width/2 - totalW/2;
-
-  shareBtn = createButton('Share');
-  shareBtn.position(startX, height - 120);
-  shareBtn.size(btnW, 40);
-  shareBtn.mousePressed(() => { if (navigator.share) navigator.share({title: 'My Gajra', url: window.location.href}); });
-  styleButton(shareBtn); shareBtn.hide();
-
-  copyBtn = createButton('Copy Link');
-  copyBtn.position(startX + btnW + gap, height - 120);
-  copyBtn.size(btnW, 40);
-  copyBtn.mousePressed(() => { 
-    navigator.clipboard.writeText(window.location.href); 
-    copyBtn.html('Copied!'); setTimeout(() => copyBtn.html('Copy Link'), 2000); 
-  });
-  styleButton(copyBtn); copyBtn.hide();
-
-  venmoBtn = createButton('Patron');
-  venmoBtn.position(startX + (btnW + gap) * 2, height - 120);
-  venmoBtn.size(btnW, 40);
-  venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
-  styleButton(venmoBtn); venmoBtn.hide();
-
-  // Final Page Secondary Row
+  // Primary Action Button (Right under text box)
   homeBtn = createButton('Create Another');
   homeBtn.position(width/2 - 80, height - 200);
   homeBtn.size(160, 40);
   homeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
   styleButton(homeBtn); homeBtn.hide();
 
-  // Simulation UI
+  // Secondary Action Row (Under Create Another)
+  let btnW = 120;
+  let gap = 15;
+  let totalW = (btnW * 2) + gap;
+  let startX = width/2 - totalW/2;
+  let btnY = height - 150; 
+
+  shareBtn = createButton('Share');
+  shareBtn.position(startX, btnY);
+  shareBtn.size(btnW, 40);
+  shareBtn.mousePressed(() => { if (navigator.share) navigator.share({title: 'My Gajra', url: window.location.href}); });
+  styleButton(shareBtn); shareBtn.hide();
+
+  venmoBtn = createButton('Patron');
+  venmoBtn.position(startX + btnW + gap, btnY);
+  venmoBtn.size(btnW, 40);
+  venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
+  styleButton(venmoBtn); venmoBtn.hide();
+
   clearBtn = createButton('Start Over');
   clearBtn.position(75, 20);
   clearBtn.size(110, 40);
@@ -123,13 +127,25 @@ function initializeUI() {
   sendBtn = createButton('Gift this Gajra');
   sendBtn.position(width/2 - 75, height - 120);
   sendBtn.size(150, 40);
-  sendBtn.mousePressed(() => { triggerSparkleExplosion(width/2, height - 120); updateGajraCount(true); appState = 2; });
+  sendBtn.mousePressed(() => { 
+    triggerSparkleExplosion(width/2, height - 120); 
+    updateGajraCount(true); 
+    appState = 2; 
+  });
   styleButton(sendBtn); sendBtn.hide();
+}
+
+function updateGajraCount(isIncrementing) {
+  if (isIncrementing) {
+    globalCountRef.transaction((currentValue) => {
+      return (currentValue || 0) + 1;
+    });
+  }
 }
 
 function hideSimulationUI() {
   navHomeBtn.hide(); downloadBtn.hide(); clearBtn.hide();
-  messageInput.hide(); sendBtn.hide(); copyBtn.hide(); shareBtn.hide(); homeBtn.hide(); venmoBtn.hide();
+  messageInput.hide(); sendBtn.hide(); shareBtn.hide(); homeBtn.hide(); venmoBtn.hide();
 }
 
 function draw() {
@@ -185,30 +201,25 @@ function drawGajraPage() {
 }
 
 function drawCreditsPage() {
-  hideSimulationUI(); downloadBtn.show(); homeBtn.show(); venmoBtn.show(); copyBtn.show(); shareBtn.show();
+  hideSimulationUI(); downloadBtn.show(); homeBtn.show(); venmoBtn.show(); shareBtn.show();
   
-  // 1. Text Header
   textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
   text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
 
-  // 2. Final Gajra Image
   let gY = 220; 
   image(circleImage, width/2, gY, 250, 250);
   drawFlowers(gY);
 
-  // 3. Message Box + Counter
   let boxW = 500, boxH = 100;
   let boxY = gY + 180;
   fill(255, 15); stroke(255, 50); rect(width/2 - boxW/2, boxY, boxW, boxH, 10);
+  
   fill(255, 255, 0); textAlign(RIGHT); textSize(10);
   text(`${messageInput.value().length}/400`, width/2 + boxW/2 - 10, boxY - 10);
+  
   fill(255); textAlign(LEFT, TOP); textSize(14); 
   text(messageInput.value() || "...", width/2 - boxW/2 + 20, boxY + 20, boxW - 40, boxH - 40);
 
-  // 4. Thank You
-  //textAlign(CENTER); textSize(24);
-  //text("Thank You", width/2, boxY + 150);
-  
   updateAndDrawSparkles();
 }
 
