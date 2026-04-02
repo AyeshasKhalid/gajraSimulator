@@ -92,7 +92,7 @@ function initializeUI() {
   });
   styleButton(copyBtn); copyBtn.hide();
 
-  venmoBtn = createButton('Support Artist');
+  venmoBtn = createButton('Patron');
   venmoBtn.position(startX + (btnW + gap) * 2, height - 120);
   venmoBtn.size(btnW, 40);
   venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
