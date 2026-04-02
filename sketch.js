@@ -78,13 +78,13 @@ function initializeUI() {
   let startX = width/2 - totalW/2;
 
   shareBtn = createButton('Share');
-  shareBtn.position(startX, height - 130);
+  shareBtn.position(startX, height - 160);
   shareBtn.size(btnW, 40);
   shareBtn.mousePressed(() => { if (navigator.share) navigator.share({title: 'My Gajra', url: window.location.href}); });
   styleButton(shareBtn); shareBtn.hide();
 
   copyBtn = createButton('Copy Link');
-  copyBtn.position(startX + btnW + gap, height - 130);
+  copyBtn.position(startX + btnW + gap, height - 160);
   copyBtn.size(btnW, 40);
   copyBtn.mousePressed(() => { 
     navigator.clipboard.writeText(window.location.href); 
@@ -93,14 +93,14 @@ function initializeUI() {
   styleButton(copyBtn); copyBtn.hide();
 
   venmoBtn = createButton('Support Artist');
-  venmoBtn.position(startX + (btnW + gap) * 2, height - 130);
+  venmoBtn.position(startX + (btnW + gap) * 2, height - 160);
   venmoBtn.size(btnW, 40);
   venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
   styleButton(venmoBtn); venmoBtn.hide();
 
   // Final Page Secondary Row
   homeBtn = createButton('Create Another');
-  homeBtn.position(width/2 - 80, height - 150);
+  homeBtn.position(width/2 - 80, height - 220);
   homeBtn.size(160, 40);
   homeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
   styleButton(homeBtn); homeBtn.hide();
@@ -167,7 +167,7 @@ function drawLandingPage() {
 function drawGajraPage() {
   navHomeBtn.show(); downloadBtn.show(); clearBtn.show();
   textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
-  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 60, 520); 
+  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
   fill(255, 255, 0); text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 140, 520);
   
   image(circleImage, width/2, height/2, 250, 250);
@@ -206,8 +206,8 @@ function drawCreditsPage() {
   text(messageInput.value() || "...", width/2 - boxW/2 + 20, boxY + 20, boxW - 40, boxH - 40);
 
   // 4. Thank You
-  //textAlign(CENTER); textSize(24);
-  //text("Thank You", width/2, boxY + 150);
+  textAlign(CENTER); textSize(24);
+  text("Thank You", width/2, boxY + 150);
   
   updateAndDrawSparkles();
 }
