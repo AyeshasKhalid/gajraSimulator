@@ -167,7 +167,7 @@ function drawLandingPage() {
 function drawGajraPage() {
   navHomeBtn.show(); downloadBtn.show(); clearBtn.show();
   textAlign(CENTER); textFont('Courier New'); textSize(14); fill(255);
-  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 80, 520); 
+  text("A gajra reminds us that love does not need grand gestures...", width/2 - 260, 60, 520); 
   fill(255, 255, 0); text("Tap the circle to bind your flowers to the thread.", width/2 - 260, 140, 520);
   
   image(circleImage, width/2, height/2, 250, 250);
