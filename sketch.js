@@ -78,13 +78,13 @@ function initializeUI() {
   let startX = width/2 - totalW/2;
 
   shareBtn = createButton('Share');
-  shareBtn.position(startX, height - 160);
+  shareBtn.position(startX, height - 120);
   shareBtn.size(btnW, 40);
   shareBtn.mousePressed(() => { if (navigator.share) navigator.share({title: 'My Gajra', url: window.location.href}); });
   styleButton(shareBtn); shareBtn.hide();
 
   copyBtn = createButton('Copy Link');
-  copyBtn.position(startX + btnW + gap, height - 160);
+  copyBtn.position(startX + btnW + gap, height - 120);
   copyBtn.size(btnW, 40);
   copyBtn.mousePressed(() => { 
     navigator.clipboard.writeText(window.location.href); 
@@ -93,14 +93,14 @@ function initializeUI() {
   styleButton(copyBtn); copyBtn.hide();
 
   venmoBtn = createButton('Support Artist');
-  venmoBtn.position(startX + (btnW + gap) * 2, height - 160);
+  venmoBtn.position(startX + (btnW + gap) * 2, height - 120);
   venmoBtn.size(btnW, 40);
   venmoBtn.mousePressed(() => window.open('https://venmo.com/u/ayeshakhalid3989', '_blank'));
   styleButton(venmoBtn); venmoBtn.hide();
 
   // Final Page Secondary Row
   homeBtn = createButton('Create Another');
-  homeBtn.position(width/2 - 80, height - 220);
+  homeBtn.position(width/2 - 80, height - 200);
   homeBtn.size(160, 40);
   homeBtn.mousePressed(() => { gajra = []; appState = 0; hideSimulationUI(); startBtn.show(); });
   styleButton(homeBtn); homeBtn.hide();
@@ -206,8 +206,8 @@ function drawCreditsPage() {
   text(messageInput.value() || "...", width/2 - boxW/2 + 20, boxY + 20, boxW - 40, boxH - 40);
 
   // 4. Thank You
-  textAlign(CENTER); textSize(24);
-  text("Thank You", width/2, boxY + 150);
+  //textAlign(CENTER); textSize(24);
+  //text("Thank You", width/2, boxY + 150);
   
   updateAndDrawSparkles();
 }
