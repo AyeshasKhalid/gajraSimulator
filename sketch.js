@@ -112,7 +112,7 @@ function initializeUI() {
           }); 
         } catch (e) { console.error(e); }
       } else {
-        try { await navigator.share({ title: 'My Gajra', url: window.location.href }); } catch (e) { console.error(e); }
+        try { await navigator.share({ title: 'A Gajra for you', url: window.location.href }); } catch (e) { console.error(e); }
       }
     }, 'image/png');
   });
