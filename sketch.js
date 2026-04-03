@@ -238,4 +238,43 @@ function drawFlowers(yCenter) {
   for (let i = 0; i < gajra.length; i++) {
     let f = gajra[i];
     push(); 
-    let offsetX = f.
+    let offsetX = f.x - width/2;
+    let offsetY = f.y - height/2;
+    translate(width/2 + offsetX, yCenter + offsetY); 
+    let wiggle = sin(frameCount * 2 + i * 20) * 3; 
+    rotate(f.rotation + wiggle);
+    image(flowerImages[f.type], 0, 0, 100, 100); 
+    pop();
+  }
+}
+
+function mousePressed() {
+  if (appState === 1 && dist(mouseX, mouseY, width / 2, height / 2) < 150) {
+    if (gajra.length >= maxFlowers) return;
+    let angle = atan2(mouseY - height / 2, mouseX - width / 2);
+    let snapX = width / 2 + radius * cos(angle);
+    let snapY = height / 2 + radius * sin(angle);
+    let selectedType = (gajra.length === maxFlowers - 1) ? 3 : floor(random(3));
+    gajra.push({ x: snapX, y: snapY, type: selectedType, rotation: random(360) });
+    if (plopSound.isLoaded()) plopSound.play();
+  }
+}
+
+function updateAndDrawSparkles() {
+  for (let i = sparkles.length - 1; i >= 0; i--) {
+    let p = sparkles[i]; p.c.setAlpha(p.alpha);
+    fill(p.c); noStroke(); circle(p.x, p.y, p.sz);
+    p.x += p.vx; p.y += p.vy; p.alpha -= 5;
+    if (p.alpha <= 0) sparkles.splice(i, 1);
+  }
+}
+
+function triggerSparkleExplosion(x, y) {
+  for (let i = 0; i < 20; i++) sparkles.push({x: x, y: y, vx: random(-2,2), vy: random(-4,-1), alpha: 255, sz: random(1,4), c: color(255, random(220,255), 200)});
+}
+
+function styleButton(btn) {
+  btn.style('padding', '10px'); btn.style('background-color', 'rgba(255, 255, 255, 0.05)'); 
+  btn.style('color', '#fff'); btn.style('border', '1px solid #fff');
+  btn.style('font-family', 'Courier New'); btn.style('cursor', 'pointer');
+}
