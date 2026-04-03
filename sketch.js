@@ -96,7 +96,6 @@ function initializeUI() {
   let startX = width/2 - totalW/2;
   let btnY = height - 150; 
 
-  // ENHANCED SHARE BUTTON (Shares image + link)
   shareBtn = createButton('Share');
   shareBtn.position(startX, btnY+30);
   shareBtn.size(btnW, 40);
@@ -104,18 +103,18 @@ function initializeUI() {
     const canvas = document.querySelector('canvas');
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'my-gajra.png', { type: 'image/png' });
-      const shareData = {
-        title: 'My Gajra',
-        text: 'I wove a gajra for you...',
-        url: window.location.href,
-        files: [file]
-      };
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share(shareData); } catch (e) { console.error(e); }
+        try { 
+          await navigator.share({
+            files: [file],
+            title: 'My Gajra',
+            url: window.location.href
+          }); 
+        } catch (e) { console.error(e); }
       } else {
         try { await navigator.share({ title: 'My Gajra', url: window.location.href }); } catch (e) { console.error(e); }
       }
-    });
+    }, 'image/png');
   });
   styleButton(shareBtn); shareBtn.hide();
 
@@ -131,13 +130,13 @@ function initializeUI() {
   clearBtn.mousePressed(() => { gajra = []; messageInput.value(''); messageInput.hide(); sendBtn.hide(); });
   styleButton(clearBtn); clearBtn.hide();
 
+  // REVERTED TEXTBOX
   messageInput = createInput('');
   messageInput.attribute('maxlength', '400');
   messageInput.attribute('placeholder', "Dear Beloved, In every flower, I have woven a thought of you....");
   messageInput.position(width/2 - 200, height - 180);
   messageInput.size(400, 40);
   messageInput.input(() => { if (typeSound.isLoaded()) typeSound.play(); });
-  styleInput(messageInput); // Custom transparent aesthetic
   messageInput.hide();
 
   sendBtn = createButton('Gift this Gajra');
@@ -239,52 +238,4 @@ function drawFlowers(yCenter) {
   for (let i = 0; i < gajra.length; i++) {
     let f = gajra[i];
     push(); 
-    let offsetX = f.x - width/2;
-    let offsetY = f.y - height/2;
-    translate(width/2 + offsetX, yCenter + offsetY); 
-    let wiggle = sin(frameCount * 2 + i * 20) * 3; 
-    rotate(f.rotation + wiggle);
-    image(flowerImages[f.type], 0, 0, 100, 100); 
-    pop();
-  }
-}
-
-function mousePressed() {
-  if (appState === 1 && dist(mouseX, mouseY, width / 2, height / 2) < 150) {
-    if (gajra.length >= maxFlowers) return;
-    let angle = atan2(mouseY - height / 2, mouseX - width / 2);
-    let snapX = width / 2 + radius * cos(angle);
-    let snapY = height / 2 + radius * sin(angle);
-    let selectedType = (gajra.length === maxFlowers - 1) ? 3 : floor(random(3));
-    gajra.push({ x: snapX, y: snapY, type: selectedType, rotation: random(360) });
-    if (plopSound.isLoaded()) plopSound.play();
-  }
-}
-
-function updateAndDrawSparkles() {
-  for (let i = sparkles.length - 1; i >= 0; i--) {
-    let p = sparkles[i]; p.c.setAlpha(p.alpha);
-    fill(p.c); noStroke(); circle(p.x, p.y, p.sz);
-    p.x += p.vx; p.y += p.vy; p.alpha -= 5;
-    if (p.alpha <= 0) sparkles.splice(i, 1);
-  }
-}
-
-function triggerSparkleExplosion(x, y) {
-  for (let i = 0; i < 20; i++) sparkles.push({x: x, y: y, vx: random(-2,2), vy: random(-4,-1), alpha: 255, sz: random(1,4), c: color(255, random(220,255), 200)});
-}
-
-function styleButton(btn) {
-  btn.style('padding', '10px'); btn.style('background-color', 'rgba(255, 255, 255, 0.05)'); 
-  btn.style('color', '#fff'); btn.style('border', '1px solid #fff');
-  btn.style('font-family', 'Courier New'); btn.style('cursor', 'pointer');
-}
-
-function styleInput(inp) {
-  inp.style('background', 'rgba(255, 255, 255, 0.05)');
-  inp.style('color', '#fff');
-  inp.style('border', '1px solid rgba(255, 255, 255, 0.4)');
-  inp.style('font-family', 'Courier New');
-  inp.style('padding', '10px');
-  inp.style('outline', 'none');
-}
+    let offsetX = f.
