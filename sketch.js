@@ -103,16 +103,28 @@ function initializeUI() {
     const canvas = document.querySelector('canvas');
     canvas.toBlob(async (blob) => {
       const file = new File([blob], 'my-gajra.png', { type: 'image/png' });
+      
+      // I've updated the title here to "A gajra for you"
+      const shareData = {
+        title: 'A gajra for you', 
+        text: 'I wove a gajra for you...',
+        url: window.location.href,
+        files: [file]
+      };
+
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try { 
-          await navigator.share({
-            files: [file],
-            title: 'My Gajra',
-            url: window.location.href
-          }); 
-        } catch (e) { console.error(e); }
+          await navigator.share(shareData); 
+        } catch (e) { 
+          console.error(e); 
+        }
       } else {
-        try { await navigator.share({ title: 'A Gajra for you', url: window.location.href }); } catch (e) { console.error(e); }
+        try { 
+          // Updated fallback title as well
+          await navigator.share({ title: 'A gajra for you', url: window.location.href }); 
+        } catch (e) { 
+          console.error(e); 
+        }
       }
     }, 'image/png');
   });
